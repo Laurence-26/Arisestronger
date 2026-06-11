@@ -130,23 +130,29 @@ class AppState extends ChangeNotifier {
     );
   }
 
-  /// On a missed day: the FIRST miss ever is forgiven with a warning (no
-  /// penalty); after the grace is spent, missed days flag a pending penalty.
+  /// Detect *fully* missed days. A day is only missed when an entire day passed
+  /// with no completion — i.e. completing yesterday and opening the app today is
+  /// NOT a miss (today is simply your fresh quest). So a miss needs a gap of ≥ 2
+  /// days between the last completion and today; missedDays = gap − 1.
+  ///
+  /// The FIRST missed day ever is forgiven with a warning (no penalty); after
+  /// the grace is spent, missed days flag a pending penalty.
   Future<void> _runMissedCheck() async {
     final last = profile.lastDate;
     if (last == null) return;
     final today = _todayDate();
-    if (_dayKey(last) == _dayKey(today)) return;
-    final missed = _daysBetween(last, today);
-    if (missed < 1 || profile.pendingPenalty) return;
+    final gap = _daysBetween(last, today);
+    if (gap < 2 || profile.pendingPenalty) return; // gap of 0/1 = nothing missed
+    final missed = gap - 1;
 
     if (!profile.graceUsed) {
       // First miss → warning only. Spend the grace, reset the streak, and move
-      // the clock to today so this gap isn't penalised later.
+      // the clock to yesterday so today stays a fresh quest day (and a further
+      // miss is still detected tomorrow).
       profile = profile.copyWith(
         graceUsed: true,
         streak: 0,
-        lastDate: today,
+        lastDate: today.subtract(const Duration(days: 1)),
       );
       pendingMissWarning = true;
       await _svc.saveProfile(profile);
