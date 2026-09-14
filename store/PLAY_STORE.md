@@ -10,15 +10,17 @@ See `short_description.txt`.
 See `full_description.txt`.
 
 ## Privacy policy URL (required)
-After this repo is on GitHub and Pages is enabled (Settings → Pages → Deploy from branch `main` / root):
+Hosted on Render (after you connect this repo once):
 
-https://laurence-26.github.io/Arisestronger/privacy-policy.html
+https://arisestronger-privacy.onrender.com/privacy-policy.html
 
-Fallback (works as soon as the file is on `main`):
+Also available as:
 
-https://raw.githubusercontent.com/Laurence-26/Arisestronger/main/privacy-policy.html
+https://arisestronger-privacy.onrender.com/
 
-The HTML file in the repo root is `privacy-policy.html`.
+Create it: Render Dashboard → New → Static Site → connect `Laurence-26/Arisestronger` → Publish directory `public` → Deploy. Or New → Blueprint to apply `render.yaml`.
+
+The HTML source is `public/privacy-policy.html`.
 
 ## Category
 Health & Fitness

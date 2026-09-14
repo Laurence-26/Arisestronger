@@ -1,0 +1,14 @@
+# Privacy policy static site on Render.
+# Dashboard: New → Blueprint → this repo, or New Static Site with the values below.
+services:
+  - type: web
+    name: arisestronger-privacy
+    runtime: static
+    plan: free
+    buildCommand: echo "Serving privacy policy"
+    staticPublishPath: ./public
+    autoDeployTrigger: commit
+    routes:
+      - type: rewrite
+        source: /
+        destination: /privacy-policy.html

@@ -29,6 +29,6 @@ HOW TO START
 4. Do today’s quest and confirm before midnight
 
 PRIVACY
-AriseStronger does not collect, share, or upload personal data. Progress is stored in a local database on your device. Full policy: https://laurence-26.github.io/Arisestronger/privacy-policy.html
+AriseStronger does not collect, share, or upload personal data. Progress is stored in a local database on your device. Full policy: https://arisestronger-privacy.onrender.com/privacy-policy.html
 
 Arise, Hunter.
