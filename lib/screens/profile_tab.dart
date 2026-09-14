@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/notification_service.dart';
-import '../services/supabase_service.dart';
+import '../services/session.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/backup_section.dart';
 import '../widgets/system_button.dart';
 
 /// The PROFILE tab — account, reminder time, notifications, and sign out.
@@ -60,7 +61,7 @@ class ProfileTab extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textBright)),
                         Text(s.level.name, style: monoStyle(size: 11, spacing: 1)),
-                        Text(SupabaseService().currentUser?.email ?? '',
+                        Text('Stored only on this device',
                             style: monoStyle(size: 10, spacing: 0.5)),
                       ],
                     ),
@@ -110,18 +111,21 @@ class ProfileTab extends StatelessWidget {
               },
             ),
 
+            const SizedBox(height: 24),
+            const BackupSection(),
+
             const SizedBox(height: 28),
             SystemButton(
-              label: 'SIGN OUT',
+              label: 'SWITCH HUNTER',
               ghost: true,
               onPressed: () async {
-                await SupabaseService().signOut();
                 await NotificationService.instance.cancelAll();
+                await Session.instance.signOut();
               },
             ),
             const SizedBox(height: 16),
             Center(
-              child: Text('ARISESTRONGER · v1.0.0',
+              child: Text('ARISESTRONGER · v1.1.2',
                   style: monoStyle(size: 10, spacing: 2)),
             ),
           ],

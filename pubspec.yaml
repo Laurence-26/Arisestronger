@@ -2,7 +2,7 @@ name: daily_quest
 description: "AriseStronger — a Solo Leveling inspired daily fitness quest system."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.1.2+6
 
 environment:
   sdk: ^3.10.0
@@ -13,8 +13,9 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # Backend / auth / sync
-  supabase_flutter: ^2.8.0
+  # Local offline database (the app's own SQLite file — no cloud)
+  sqflite: ^2.4.1
+  path: ^1.9.0
 
   # State management
   provider: ^6.1.2
@@ -27,6 +28,11 @@ dependencies:
   # Local cache / preferences
   shared_preferences: ^2.3.2
 
+  # Backup export / import (share a JSON file out, pick one back in)
+  share_plus: ^11.0.0
+  file_selector: ^1.0.3
+  path_provider: ^2.1.5
+
   # Misc
   intl: ^0.19.0
 
@@ -38,6 +44,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.3.4
   flutter_launcher_icons: ^0.14.4
 
 flutter_native_splash:

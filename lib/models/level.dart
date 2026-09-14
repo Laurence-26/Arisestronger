@@ -101,12 +101,12 @@ double levelProgressFor(int totalDays) {
   return dur == 0 ? 1.0 : (totalDays - kRankThresholds[i]) / dur;
 }
 
-/// Self-reported fitness level chosen during onboarding, which sets the
-/// starting rank. Beginner → E, Intermediate → C, Pro → B.
+/// Self-reported fitness level chosen during onboarding. This only *suggests*
+/// a starting rank — the Hunter can pick any rank on the awakening screen.
 enum StartLevel { beginner, intermediate, pro }
 
 extension StartLevelInfo on StartLevel {
-  /// Rank index this level starts at.
+  /// Suggested rank index (Hunter can still pick a different one).
   int get startLevelIndex {
     switch (this) {
       case StartLevel.beginner:
@@ -135,11 +135,11 @@ extension StartLevelInfo on StartLevel {
   String get subtitle {
     switch (this) {
       case StartLevel.beginner:
-        return 'New to training — start at E-Rank and build the foundation.';
+        return 'Suggested E — pick D or any other rank if you want a harder start.';
       case StartLevel.intermediate:
-        return 'Train regularly — begin at C-Rank with a tougher program.';
+        return 'Suggested C — train regularly. Choose any rank that matches you.';
       case StartLevel.pro:
-        return 'Seriously fit — enter at B-Rank and push toward Monarch.';
+        return 'Suggested B — seriously fit. Start anywhere, including the top.';
     }
   }
 

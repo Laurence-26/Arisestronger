@@ -11,8 +11,8 @@ import 'profile_tab.dart';
 import 'program_tab.dart';
 import 'progress_tab.dart';
 
-/// Root authenticated shell: handles loading/error, gates onboarding, and hosts
-/// the four-tab bottom navigation.
+/// Root shell for the active Hunter: handles loading/error, gates onboarding,
+/// and hosts the four-tab bottom navigation.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -64,7 +64,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('◈ CONNECTION ERROR ◈',
+                Text('◈ SYSTEM ERROR ◈',
                     style:
                         monoStyle(size: 12, color: AppColors.red, spacing: 3)),
                 const SizedBox(height: 12),

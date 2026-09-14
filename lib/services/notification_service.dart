@@ -51,26 +51,34 @@ class NotificationService {
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
-    await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
-    );
+    try {
+      await _plugin.initialize(
+        const InitializationSettings(android: android, iOS: ios),
+      );
+    } catch (e) {
+      debugPrint('Notification init failed: $e');
+    }
     _ready = true;
   }
 
   /// Ask the OS for permission to post notifications (Android 13+ and iOS).
   Future<bool> requestPermissions() async {
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
-    if (ios != null) {
-      final granted = await ios.requestPermissions(
-          alert: true, badge: true, sound: true);
-      return granted ?? false;
-    }
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    if (android != null) {
-      final granted = await android.requestNotificationsPermission();
-      return granted ?? false;
+    try {
+      final ios = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios != null) {
+        final granted = await ios.requestPermissions(
+            alert: true, badge: true, sound: true);
+        return granted ?? false;
+      }
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final granted = await android.requestNotificationsPermission();
+        return granted ?? false;
+      }
+    } catch (e) {
+      debugPrint('Notification permission request failed: $e');
     }
     return false;
   }
@@ -116,8 +124,8 @@ class NotificationService {
     required int minute,
   }) async {
     if (!_ready) await init();
-    await _plugin.cancel(_morningId);
-    await _plugin.cancel(_eveningId);
+    await _safeCancel(_morningId);
+    await _safeCancel(_eveningId);
 
     final q = quoteForDay(DateTime.now());
     await _schedule(
@@ -141,8 +149,28 @@ class NotificationService {
   /// Immediate notification (used for testing / instant feedback).
   Future<void> showNow(String title, String body) async {
     if (!_ready) await init();
-    await _plugin.show(9000, title, body, _details);
+    try {
+      await _plugin.show(9000, title, body, _details);
+    } catch (e) {
+      debugPrint('Notification show failed: $e');
+    }
   }
 
-  Future<void> cancelAll() => _plugin.cancelAll();
+  Future<void> cancelAll() async {
+    try {
+      await _plugin.cancelAll();
+    } catch (e) {
+      debugPrint('Notification cancelAll failed: $e');
+    }
+  }
+
+  /// Cancel must never take the app down. Release R8 can still throw
+  /// "Missing type parameter" on a stale scheduled-notification cache.
+  Future<void> _safeCancel(int id) async {
+    try {
+      await _plugin.cancel(id);
+    } catch (e) {
+      debugPrint('Notification cancel($id) failed: $e');
+    }
+  }
 }

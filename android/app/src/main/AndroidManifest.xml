@@ -3,8 +3,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <!-- Internet for Supabase -->
-    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:label="AriseStronger"
@@ -30,15 +28,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            <!-- Google OAuth deep-link redirect (Supabase) -->
-            <intent-filter android:autoVerify="false">
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data
-                    android:scheme="com.sldq.dailyquest"
-                    android:host="login-callback"/>
             </intent-filter>
         </activity>
         <!-- flutter_local_notifications: re-schedule daily reminders after reboot -->

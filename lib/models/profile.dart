@@ -29,18 +29,19 @@ class Profile {
   factory Profile.fromMap(Map<String, dynamic> m) {
     DateTime? parseDate(dynamic v) =>
         v == null ? null : DateTime.parse(v.toString());
+    bool asBool(dynamic v) => v == true || v == 1 || v == '1';
     return Profile(
       id: m['id'] as String,
       displayName: (m['display_name'] as String?) ?? 'Hunter',
       totalDays: (m['total_days'] as num?)?.toInt() ?? 0,
       streak: (m['streak'] as num?)?.toInt() ?? 0,
       lastDate: parseDate(m['last_date']),
-      pendingPenalty: (m['pending_penalty'] as bool?) ?? false,
+      pendingPenalty: asBool(m['pending_penalty']),
       missedDays: (m['missed_days'] as num?)?.toInt() ?? 0,
       reminderHour: (m['reminder_hour'] as num?)?.toInt() ?? 8,
       reminderMinute: (m['reminder_minute'] as num?)?.toInt() ?? 0,
-      onboarded: (m['onboarded'] as bool?) ?? false,
-      graceUsed: (m['grace_used'] as bool?) ?? false,
+      onboarded: asBool(m['onboarded']),
+      graceUsed: asBool(m['grace_used']),
     );
   }
 

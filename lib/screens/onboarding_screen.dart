@@ -20,6 +20,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   late final TextEditingController _name;
   StartLevel _level = StartLevel.beginner;
+  int _rankIndex = 0;
   TimeOfDay _reminder = const TimeOfDay(hour: 8, minute: 0);
   bool _busy = false;
 
@@ -43,7 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final s = context.read<AppState>();
     await NotificationService.instance.requestPermissions();
     await s.completeOnboarding(
-      level: _level,
+      startRankIndex: _rankIndex,
       displayName: _name.text,
       reminderHour: _reminder.hour,
       reminderMinute: _reminder.minute,
@@ -88,10 +89,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                 _label('YOUR TRAINING LEVEL'),
                 const SizedBox(height: 4),
-                Text('This sets your starting rank. You can climb from here.',
+                Text('A suggestion only — you still choose the starting rank.',
                     style: monoStyle(size: 11, spacing: 0.5)),
                 const SizedBox(height: 10),
                 ...StartLevel.values.map(_levelCard),
+                const SizedBox(height: 18),
+
+                _label('STARTING RANK'),
+                const SizedBox(height: 4),
+                Text(
+                  'Beginner can start at D, E, or any other rank. The System will scale the quest to match.',
+                  style: monoStyle(size: 11, spacing: 0.5),
+                ),
+                const SizedBox(height: 10),
+                _rankGrid(),
                 const SizedBox(height: 18),
 
                 _label('DAILY REMINDER'),
@@ -142,10 +153,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _levelCard(StartLevel level) {
     final selected = _level == level;
-    final accent =
-        kLevels[level.startLevelIndex].color;
+    final accent = kLevels[level.startLevelIndex].color;
     return GestureDetector(
-      onTap: () => setState(() => _level = level),
+      onTap: () => setState(() {
+        _level = level;
+        _rankIndex = level.startLevelIndex;
+      }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -196,6 +209,58 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             if (selected)
               const Icon(Icons.check_circle, color: AppColors.green, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rankGrid() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var i = 0; i < kLevels.length; i++) _rankChip(i),
+      ],
+    );
+  }
+
+  Widget _rankChip(int i) {
+    final lv = kLevels[i];
+    final selected = _rankIndex == i;
+    return GestureDetector(
+      onTap: () => setState(() => _rankIndex = i),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        width: 72,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? lv.color.withValues(alpha: 0.16) : AppColors.bg2,
+          borderRadius: BorderRadius.circular(2),
+          border: Border.all(
+            color: selected ? lv.color : AppColors.border,
+            width: selected ? 1.6 : 1,
+          ),
+          boxShadow: selected
+              ? [BoxShadow(color: lv.color.withValues(alpha: 0.28), blurRadius: 12)]
+              : null,
+        ),
+        child: Column(
+          children: [
+            Text(
+              lv.rank,
+              style: TextStyle(
+                fontFamily: kMono,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: lv.color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${lv.reps} reps',
+              style: monoStyle(size: 9, spacing: 0.2),
+            ),
           ],
         ),
       ),

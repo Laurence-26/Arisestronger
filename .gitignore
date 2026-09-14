@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local release artifacts (too large for GitHub)
+*.apk
+*.aab
+store/*.apk
+store/*.aab
+store/demo/clip_*.mp4
+store/demo/concat.txt

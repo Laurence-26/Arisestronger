@@ -52,7 +52,7 @@ class Exercise {
       forDate: m['for_date'] == null
           ? null
           : DateTime.parse(m['for_date'].toString()),
-      active: (m['active'] as bool?) ?? true,
+      active: m['active'] == true || m['active'] == 1 || m['active'] == '1',
       sortOrder: (m['sort_order'] as num?)?.toInt() ?? 0,
     );
   }

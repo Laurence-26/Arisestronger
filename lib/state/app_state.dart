@@ -6,7 +6,7 @@ import '../models/exercise.dart';
 import '../models/level.dart';
 import '../models/profile.dart';
 import '../services/notification_service.dart';
-import '../services/supabase_service.dart';
+import '../services/quest_service.dart';
 
 String _dayKey(DateTime d) => d.toIso8601String().substring(0, 10);
 DateTime _todayDate() {
@@ -28,7 +28,7 @@ class CompleteResult {
 }
 
 class AppState extends ChangeNotifier {
-  final SupabaseService _svc;
+  final QuestService _svc;
   AppState(this._svc);
 
   bool loading = true;
@@ -114,7 +114,11 @@ class AppState extends ChangeNotifier {
       _penalties = await _svc.fetchPenalties();
 
       await _runMissedCheck();
-      await _scheduleReminders();
+      try {
+        await _scheduleReminders();
+      } catch (e) {
+        debugPrint('Reminder schedule failed: $e');
+      }
     } catch (e) {
       error = e.toString();
     } finally {
@@ -293,16 +297,17 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------- ONBOARDING ----------------
-  /// Set the starting rank from the chosen fitness level and mark onboarded.
+  /// Set the starting rank and mark onboarded.
   Future<void> completeOnboarding({
-    required StartLevel level,
+    required int startRankIndex,
     required String displayName,
     int? reminderHour,
     int? reminderMinute,
   }) async {
+    final i = startRankIndex.clamp(0, kLevels.length - 1);
     profile = profile.copyWith(
       displayName: displayName.trim().isEmpty ? 'Hunter' : displayName.trim(),
-      totalDays: level.startTotalDays,
+      totalDays: kRankThresholds[i],
       onboarded: true,
       reminderHour: reminderHour,
       reminderMinute: reminderMinute,

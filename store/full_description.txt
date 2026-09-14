@@ -1,0 +1,34 @@
+AriseStronger is a Solo Leveling–inspired daily fitness quest. No account. No cloud. Your Hunter, streak, and rank live only on your phone.
+
+THE SYSTEM
+Every morning you receive a daily quest matched to your rank. Complete push-ups, sit-ups, squats, and any custom work you add. Check every exercise, complete the day, and the System records your progress.
+
+CHOOSE YOUR STARTING RANK
+Awaken a Hunter and pick how hard to begin. Beginner is only a suggestion — you can start at E, D, C, or any rank through S. The quest intensity and suggested reps scale to the rank you choose. Climb when you are ready. Each rank-up celebrates with a Level Up screen.
+
+STREAKS AND THE PENALTY ZONE
+Keep the chain alive. Miss a day and the System warns you once. Miss again and you enter the Penalty Zone — days of progress are deducted. The first miss is forgiven. After that, the System does not.
+
+FULLY OFFLINE
+AriseStronger never needs the internet. There is no login, no email, and no server. Multiple Hunters can share one device, each with their own rank and history. Export a JSON backup when you want a copy; import it to restore.
+
+WHAT YOU GET
+• Choose any starting rank (E through S)
+• Daily quests that scale with your rank
+• Custom exercises (reps or timed holds)
+• Plan extra work for tomorrow
+• Local reminders in the morning and a penalty warning at night
+• 28-day completion history
+• Quotes to keep you moving
+• Dark “System” interface inspired by Solo Leveling
+
+HOW TO START
+1. Awaken a Hunter with any name
+2. Pick Beginner, Intermediate, or Pro as a suggestion
+3. Choose your starting rank — D is allowed even as a beginner
+4. Do today’s quest and confirm before midnight
+
+PRIVACY
+AriseStronger does not collect, share, or upload personal data. Progress is stored in a local database on your device. Full policy: https://laurence-26.github.io/Arisestronger/privacy-policy.html
+
+Arise, Hunter.
