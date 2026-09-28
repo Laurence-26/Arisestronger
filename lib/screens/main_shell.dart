@@ -14,19 +14,21 @@ import 'progress_tab.dart';
 /// Root shell for the active Hunter: handles loading/error, gates onboarding,
 /// and hosts the four-tab bottom navigation.
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final int initialTab;
+  const MainShell({super.key, this.initialTab = 0});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
-  int _index = 0;
+  late int _index;
   String _lastDay = DateTime.now().toIso8601String().substring(0, 10);
 
   @override
   void initState() {
     super.initState();
+    _index = widget.initialTab;
     WidgetsBinding.instance.addObserver(this);
   }
 

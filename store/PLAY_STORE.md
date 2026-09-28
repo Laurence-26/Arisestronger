@@ -41,7 +41,7 @@ Upload `store/demo/arisestronger-demo-landscape.mp4` to YouTube (Unlisted or Pub
 Vertical version: `store/demo/arisestronger-demo.mp4`
 
 ## Phone screenshots
-`store/screenshots/` (8 × 9:16). Screenshot 08 is the new starting-rank picker (Beginner can choose D).
+`store/screenshots/` (8 × 1080×1920). Captured from the real Flutter UI (same screens/fonts/nav as Android). Screenshot 08 is the starting-rank picker.
 
 ## Feature graphic
 `store/feature_graphic.png` — 1024 × 500.

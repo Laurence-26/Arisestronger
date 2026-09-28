@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/add_exercise_sheet.dart';
 import '../widgets/animated_flame.dart';
 import '../widgets/overlays.dart';
+import '../widgets/quest_complete_button.dart';
 import '../widgets/quest_tile.dart';
 import '../widgets/quote_card.dart';
 import '../widgets/rank_card.dart';
@@ -96,20 +97,17 @@ class HomeTab extends StatelessWidget {
             if (s.profile.pendingPenalty)
               _PenaltySection(state: s)
             else
-              SystemButton(
-                label: completed
-                    ? '✓ QUEST COMPLETE — WELL DONE, HUNTER'
-                    : '◈ QUEST COMPLETE ◈',
-                onPressed: (completed || !s.allCheckedToday)
-                    ? null
-                    : () => _complete(context, s),
+              QuestCompleteButton(
+                completed: completed,
+                enabled: s.allCheckedToday,
+                onPressed: () => _complete(context, s),
               ),
             if (!completed &&
                 !s.allCheckedToday &&
                 !s.profile.pendingPenalty &&
                 exercises.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 10),
                 child: Text('Complete all exercises to finish your quest.',
                     textAlign: TextAlign.center, style: monoStyle(size: 11)),
               ),

@@ -119,9 +119,13 @@ class NotificationService {
 
   /// (Re)schedule the recurring daily reminders. Call after login and whenever
   /// the user changes their reminder time.
+  ///
+  /// The 23:00 penalty warning is only scheduled when today's quest is still
+  /// incomplete — completing the quest cancels it so it never fires that night.
   Future<void> scheduleDailyReminders({
     required int hour,
     required int minute,
+    bool questCompletedToday = false,
   }) async {
     if (!_ready) await init();
     await _safeCancel(_morningId);
@@ -136,14 +140,21 @@ class NotificationService {
       '"${q.text}" — ${q.author}',
     );
 
+    if (questCompletedToday) return;
+
     await _schedule(
       _eveningId,
-      20,
-      30,
+      23,
+      0,
       '◈ PENALTY WARNING ◈',
       'Your daily quest isn\'t complete. Finish it before midnight or the '
           'Penalty Zone will claim your progress. Don\'t break the chain, Hunter.',
     );
+  }
+
+  /// Drop only the 23:00 penalty warning (e.g. right after quest complete).
+  Future<void> cancelPenaltyWarning() async {
+    await _safeCancel(_eveningId);
   }
 
   /// Immediate notification (used for testing / instant feedback).

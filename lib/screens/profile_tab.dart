@@ -61,7 +61,7 @@ class ProfileTab extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textBright)),
                         Text(s.level.name, style: monoStyle(size: 11, spacing: 1)),
-                        Text('Stored only on this device',
+                        Text('LOCAL PROFILE · OFFLINE',
                             style: monoStyle(size: 10, spacing: 0.5)),
                       ],
                     ),
@@ -95,6 +95,7 @@ class ProfileTab extends StatelessWidget {
                 await NotificationService.instance.scheduleDailyReminders(
                   hour: s.profile.reminderHour,
                   minute: s.profile.reminderMinute,
+                  questCompletedToday: s.completedToday,
                 );
                 if (granted) {
                   await NotificationService.instance.showNow(
@@ -125,7 +126,7 @@ class ProfileTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Center(
-              child: Text('ARISESTRONGER · v1.1.2',
+              child: Text('ARISESTRONGER · v1.1.4',
                   style: monoStyle(size: 10, spacing: 2)),
             ),
           ],

@@ -31,6 +31,9 @@ class AppState extends ChangeNotifier {
   final QuestService _svc;
   AppState(this._svc);
 
+  /// Widget tests skip plugin channels (notifications) that hang under flutter_test.
+  static bool skipSideEffects = false;
+
   bool loading = true;
   String? error;
 
@@ -114,10 +117,12 @@ class AppState extends ChangeNotifier {
       _penalties = await _svc.fetchPenalties();
 
       await _runMissedCheck();
-      try {
-        await _scheduleReminders();
-      } catch (e) {
-        debugPrint('Reminder schedule failed: $e');
+      if (!skipSideEffects) {
+        try {
+          await _scheduleReminders();
+        } catch (e) {
+          debugPrint('Reminder schedule failed: $e');
+        }
       }
     } catch (e) {
       error = e.toString();
@@ -131,6 +136,7 @@ class AppState extends ChangeNotifier {
     await NotificationService.instance.scheduleDailyReminders(
       hour: profile.reminderHour,
       minute: profile.reminderMinute,
+      questCompletedToday: _completedToday,
     );
   }
 
