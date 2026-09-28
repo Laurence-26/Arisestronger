@@ -161,6 +161,86 @@ Future<void> showLevelUpOverlay(BuildContext context, int levelIndex) {
   );
 }
 
+/// Weekly Gate clear celebration — optional raid, no totalDays change.
+Future<void> showGateClearedOverlay(
+  BuildContext context, {
+  required int levelIndex,
+  required int gatesCleared,
+}) {
+  final lv = kLevels[levelIndex.clamp(0, kLevels.length - 1)];
+  return showGeneralDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: AppColors.bg.withValues(alpha: 0.9),
+    transitionDuration: const Duration(milliseconds: 320),
+    transitionBuilder: _fadeScale,
+    pageBuilder: (ctx, a1, a2) {
+      return _SystemOverlayScaffold(
+        accent: AppColors.gold,
+        eyebrow: 'GATE CLEARED',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${lv.rank}-RANK GATE',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: kSans,
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 4,
+                color: AppColors.textBright,
+                shadows: [
+                  Shadow(
+                      color: AppColors.gold.withValues(alpha: 0.45),
+                      blurRadius: 24),
+                ],
+              ),
+            ),
+            const SizedBox(height: 22),
+            _RankHero(rank: lv.rank, color: lv.color),
+            const SizedBox(height: 18),
+            Text(
+              'RAID SEALED',
+              textAlign: TextAlign.center,
+              style: monoStyle(size: 12, color: AppColors.gold, spacing: 3),
+            ),
+            const SizedBox(height: 22),
+            _StatStrip(children: [
+              _StatChip(
+                label: 'RANK',
+                value: lv.rank,
+                color: lv.color,
+              ),
+              _StatChip(
+                label: 'GATES',
+                value: '$gatesCleared',
+                color: AppColors.gold,
+              ),
+              _StatChip(
+                label: 'STATUS',
+                value: 'CLEAR',
+                color: AppColors.green,
+              ),
+            ]),
+            const SizedBox(height: 18),
+            Text(
+              'Optional raid complete. Daily streak and rank days are unchanged.',
+              textAlign: TextAlign.center,
+              style: monoStyle(size: 12, spacing: 0.4).copyWith(height: 1.55),
+            ),
+            const SizedBox(height: 26),
+            SystemButton(
+              label: 'CONFIRM',
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 /// Full-screen PENALTY ZONE confirmation. Returns true if accepted.
 Future<bool> showPenaltyOverlay(
     BuildContext context, int missedDays, int currentTotal) {
@@ -517,8 +597,13 @@ class _StatChip extends StatelessWidget {
 class HistoryDots extends StatelessWidget {
   final Set<String> history;
   final Set<String> penalties;
-  const HistoryDots(
-      {super.key, required this.history, required this.penalties});
+  final Set<String> gateClears;
+  const HistoryDots({
+    super.key,
+    required this.history,
+    required this.penalties,
+    this.gateClears = const {},
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -536,7 +621,10 @@ class HistoryDots extends StatelessWidget {
         final key = d.toIso8601String().substring(0, 10);
         Color color = Colors.transparent;
         Color border = AppColors.purple.withValues(alpha: 0.2);
-        if (history.contains(key)) {
+        if (gateClears.contains(key)) {
+          color = AppColors.gold;
+          border = AppColors.gold;
+        } else if (history.contains(key)) {
           color = AppColors.purple;
           border = AppColors.purple;
         } else if (penalties.contains(key)) {

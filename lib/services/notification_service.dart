@@ -126,18 +126,22 @@ class NotificationService {
     required int hour,
     required int minute,
     bool questCompletedToday = false,
+    bool isGateDay = false,
   }) async {
     if (!_ready) await init();
     await _safeCancel(_morningId);
     await _safeCancel(_eveningId);
 
     final q = quoteForDay(DateTime.now());
+    final morningBody = isGateDay
+        ? 'A Gate Raid is open today. Clear your daily quest, then the Gate — if you choose. "${q.text}" — ${q.author}'
+        : '"${q.text}" — ${q.author}';
     await _schedule(
       _morningId,
       hour,
       minute,
       '◈ ARISE, HUNTER ◈',
-      '"${q.text}" — ${q.author}',
+      morningBody,
     );
 
     if (questCompletedToday) return;

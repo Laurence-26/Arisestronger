@@ -33,6 +33,7 @@ class QuestService {
         'reminder_minute': 0,
         'onboarded': 0,
         'grace_used': 0,
+        'gate_weekday': 7,
         'created_at': now,
         'updated_at': now,
       });
@@ -188,6 +189,57 @@ class QuestService {
       'penalties',
       {'user_id': hunterId, 'day': day, 'amount': amount},
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<bool> isGateClearedForWeek(String week) async {
+    final rows = await _db.db.query(
+      'gate_clears',
+      columns: ['week'],
+      where: 'user_id = ? AND week = ?',
+      whereArgs: [hunterId, week],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
+  Future<int> countGateClears() async {
+    final rows = await _db.db.rawQuery(
+      'SELECT COUNT(*) AS c FROM gate_clears WHERE user_id = ?',
+      [hunterId],
+    );
+    return (rows.first['c'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Days that had a Gate clear (for Progress history marks).
+  Future<Set<String>> fetchGateClearDays({int lastDays = 60}) async {
+    final from = DateTime.now()
+        .subtract(Duration(days: lastDays))
+        .toIso8601String()
+        .substring(0, 10);
+    final rows = await _db.db.query(
+      'gate_clears',
+      columns: ['day'],
+      where: 'user_id = ? AND day >= ?',
+      whereArgs: [hunterId, from],
+    );
+    return rows.map((m) => m['day'].toString()).toSet();
+  }
+
+  Future<void> addGateClear({
+    required String week,
+    required String day,
+    required int rankIndex,
+  }) async {
+    await _db.db.insert(
+      'gate_clears',
+      {
+        'user_id': hunterId,
+        'week': week,
+        'day': day,
+        'rank_index': rankIndex,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 }

@@ -36,6 +36,40 @@ class ProgressTab extends StatelessWidget {
                 _stat('${s.levelIndex + 1}', 'LEVEL', AppColors.cyan),
               ],
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _stat('${s.gatesClearedCount}', 'GATES', AppColors.gold),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    decoration: panelDecoration(),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('OPTIONAL RAID',
+                            style: monoStyle(size: 9, spacing: 1)),
+                        const SizedBox(height: 4),
+                        Text(
+                          s.isGateDay
+                              ? (s.gateClearedThisWeek
+                                  ? 'Gate cleared this week'
+                                  : 'Gate open today — skip freely')
+                              : 'Next Gate on ${_weekdayHint(s.profile.gateWeekday)}',
+                          style: const TextStyle(
+                              color: AppColors.textBright,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
 
             // Rank progress card
@@ -151,7 +185,10 @@ class ProgressTab extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: HistoryDots(
-                        history: s.history, penalties: s.penalties),
+                      history: s.history,
+                      penalties: s.penalties,
+                      gateClears: s.gateClearDays,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -160,6 +197,7 @@ class ProgressTab extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         _legend(AppColors.purple, 'Complete'),
+                        _legend(AppColors.gold, 'Gate'),
                         _legend(AppColors.red, 'Penalty'),
                         _legend(
                             AppColors.red.withValues(alpha: 0.2), 'Missed'),
@@ -205,4 +243,9 @@ class ProgressTab extends StatelessWidget {
           Text(label, style: monoStyle(size: 10)),
         ],
       );
+}
+
+String _weekdayHint(int weekday) {
+  const shorts = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return shorts[weekday.clamp(1, 7) - 1];
 }

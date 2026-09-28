@@ -12,6 +12,9 @@ class Profile {
   final bool onboarded;
   final bool graceUsed; // has the one-time "first miss" warning been spent?
 
+  /// Preferred Gate day using [DateTime.weekday] (1=Mon … 7=Sun). Default Sunday.
+  final int gateWeekday;
+
   const Profile({
     required this.id,
     required this.displayName,
@@ -24,12 +27,14 @@ class Profile {
     required this.reminderMinute,
     required this.onboarded,
     required this.graceUsed,
+    this.gateWeekday = 7,
   });
 
   factory Profile.fromMap(Map<String, dynamic> m) {
     DateTime? parseDate(dynamic v) =>
         v == null ? null : DateTime.parse(v.toString());
     bool asBool(dynamic v) => v == true || v == 1 || v == '1';
+    final weekday = (m['gate_weekday'] as num?)?.toInt() ?? 7;
     return Profile(
       id: m['id'] as String,
       displayName: (m['display_name'] as String?) ?? 'Hunter',
@@ -42,6 +47,7 @@ class Profile {
       reminderMinute: (m['reminder_minute'] as num?)?.toInt() ?? 0,
       onboarded: asBool(m['onboarded']),
       graceUsed: asBool(m['grace_used']),
+      gateWeekday: weekday.clamp(1, 7),
     );
   }
 
@@ -56,6 +62,7 @@ class Profile {
         'reminder_minute': reminderMinute,
         'onboarded': onboarded,
         'grace_used': graceUsed,
+        'gate_weekday': gateWeekday,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
@@ -71,6 +78,7 @@ class Profile {
     int? reminderMinute,
     bool? onboarded,
     bool? graceUsed,
+    int? gateWeekday,
   }) {
     return Profile(
       id: id,
@@ -84,6 +92,7 @@ class Profile {
       reminderMinute: reminderMinute ?? this.reminderMinute,
       onboarded: onboarded ?? this.onboarded,
       graceUsed: graceUsed ?? this.graceUsed,
+      gateWeekday: gateWeekday ?? this.gateWeekday,
     );
   }
 }

@@ -23,8 +23,11 @@ class LocalDatabase {
     final dbPath = path ?? p.join(await getDatabasesPath(), 'arise_stronger.db');
     _db = await openDatabase(
       dbPath,
-      version: 1,
+      version: 2,
       onCreate: (d, _) async => _create(d),
+      onUpgrade: (d, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _migrateToV2(d);
+      },
       onOpen: (d) async => d.execute('PRAGMA foreign_keys = ON'),
     );
   }
@@ -55,6 +58,7 @@ class LocalDatabase {
         reminder_minute INTEGER NOT NULL DEFAULT 0,
         onboarded INTEGER NOT NULL DEFAULT 0,
         grace_used INTEGER NOT NULL DEFAULT 0,
+        gate_weekday INTEGER NOT NULL DEFAULT 7,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (id) REFERENCES hunters(id) ON DELETE CASCADE
@@ -100,6 +104,31 @@ class LocalDatabase {
         day TEXT NOT NULL,
         amount INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (user_id, day),
+        FOREIGN KEY (user_id) REFERENCES hunters(id) ON DELETE CASCADE
+      )
+    ''');
+    await d.execute('''
+      CREATE TABLE gate_clears (
+        user_id TEXT NOT NULL,
+        week TEXT NOT NULL,
+        day TEXT NOT NULL,
+        rank_index INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (user_id, week),
+        FOREIGN KEY (user_id) REFERENCES hunters(id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  Future<void> _migrateToV2(Database d) async {
+    await d.execute(
+        'ALTER TABLE profiles ADD COLUMN gate_weekday INTEGER NOT NULL DEFAULT 7');
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS gate_clears (
+        user_id TEXT NOT NULL,
+        week TEXT NOT NULL,
+        day TEXT NOT NULL,
+        rank_index INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (user_id, week),
         FOREIGN KEY (user_id) REFERENCES hunters(id) ON DELETE CASCADE
       )
     ''');
@@ -151,6 +180,7 @@ class LocalDatabase {
         'reminder_minute': 0,
         'onboarded': 0,
         'grace_used': 0,
+        'gate_weekday': 7,
         'created_at': now,
         'updated_at': now,
       });
@@ -175,7 +205,7 @@ class LocalDatabase {
 
   Future<Map<String, dynamic>> exportSnapshot() async {
     return {
-      'version': 1,
+      'version': 2,
       'exported_at': DateTime.now().toIso8601String(),
       'hunters': await db.query('hunters'),
       'profiles': await db.query('profiles'),
@@ -183,12 +213,14 @@ class LocalDatabase {
       'daily_state': await db.query('daily_state'),
       'quest_history': await db.query('quest_history'),
       'penalties': await db.query('penalties'),
+      'gate_clears': await db.query('gate_clears'),
     };
   }
 
   Future<BackupRestoreResult> restoreSnapshot(Map<String, dynamic> data) async {
     final hunters = (data['hunters'] as List?) ?? const [];
     await db.transaction((txn) async {
+      await txn.delete('gate_clears');
       await txn.delete('penalties');
       await txn.delete('quest_history');
       await txn.delete('daily_state');
@@ -199,7 +231,9 @@ class LocalDatabase {
         await txn.insert('hunters', Map<String, Object?>.from(row as Map));
       }
       for (final row in (data['profiles'] as List?) ?? const []) {
-        await txn.insert('profiles', Map<String, Object?>.from(row as Map));
+        final map = Map<String, Object?>.from(row as Map);
+        map.putIfAbsent('gate_weekday', () => 7);
+        await txn.insert('profiles', map);
       }
       for (final row in (data['exercises'] as List?) ?? const []) {
         await txn.insert('exercises', Map<String, Object?>.from(row as Map));
@@ -212,6 +246,9 @@ class LocalDatabase {
       }
       for (final row in (data['penalties'] as List?) ?? const []) {
         await txn.insert('penalties', Map<String, Object?>.from(row as Map));
+      }
+      for (final row in (data['gate_clears'] as List?) ?? const []) {
+        await txn.insert('gate_clears', Map<String, Object?>.from(row as Map));
       }
     });
     return BackupRestoreResult(
@@ -255,4 +292,14 @@ Map<String, bool> decodeChecks(dynamic raw) {
   final map = raw is String ? jsonDecode(raw) : raw;
   if (map is! Map) return {};
   return map.map((k, v) => MapEntry(k.toString(), v == true || v == 1));
+}
+
+/// ISO week key like `2026-W39` (Monday-based weeks).
+String isoWeekKey(DateTime date) {
+  final d = DateTime.utc(date.year, date.month, date.day);
+  // Thursday of this week determines the ISO year.
+  final thursday = d.add(Duration(days: 4 - (d.weekday)));
+  final yearStart = DateTime.utc(thursday.year);
+  final week = ((thursday.difference(yearStart).inDays) / 7).floor() + 1;
+  return '${thursday.year}-W${week.toString().padLeft(2, '0')}';
 }
