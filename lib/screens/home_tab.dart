@@ -8,7 +8,9 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_exercise_sheet.dart';
 import '../widgets/animated_flame.dart';
+import '../widgets/gate_clear_button.dart';
 import '../widgets/overlays.dart';
+import '../widgets/quest_complete_button.dart';
 import '../widgets/quest_tile.dart';
 import '../widgets/quote_card.dart';
 import '../widgets/rank_card.dart';
@@ -96,23 +98,26 @@ class HomeTab extends StatelessWidget {
             if (s.profile.pendingPenalty)
               _PenaltySection(state: s)
             else
-              SystemButton(
-                label: completed
-                    ? '✓ QUEST COMPLETE — WELL DONE, HUNTER'
-                    : '◈ QUEST COMPLETE ◈',
-                onPressed: (completed || !s.allCheckedToday)
-                    ? null
-                    : () => _complete(context, s),
+              QuestCompleteButton(
+                completed: completed,
+                enabled: s.allCheckedToday,
+                onPressed: () => _complete(context, s),
               ),
             if (!completed &&
                 !s.allCheckedToday &&
                 !s.profile.pendingPenalty &&
                 exercises.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 10),
                 child: Text('Complete all exercises to finish your quest.',
                     textAlign: TextAlign.center, style: monoStyle(size: 11)),
               ),
+
+            if (s.isGateDay) ...[
+              const SizedBox(height: 22),
+              _GateRaidSection(state: s),
+            ],
+
             const SizedBox(height: 18),
             Center(child: Text('◈ ARISE ◈', style: monoStyle(size: 11, spacing: 3))),
           ],
@@ -229,10 +234,142 @@ class HomeTab extends StatelessWidget {
   }
 
   Future<void> _runTimer(BuildContext context, AppState s, Exercise e) async {
-    final done = await TimerSheet.show(context, e);
-    if (done == true && !s.isChecked(e.id)) {
-      await s.toggleCheck(e.id);
+    await _startExerciseTimer(context, s, e);
+  }
+}
+
+Future<void> _startExerciseTimer(
+    BuildContext context, AppState s, Exercise e) async {
+  final done = await TimerSheet.show(context, e);
+  if (done == true && !s.isChecked(e.id)) {
+    await s.toggleCheck(e.id);
+  }
+}
+
+/// Optional weekly Gate raid — shown only on the Hunter's Gate weekday.
+class _GateRaidSection extends StatelessWidget {
+  final AppState state;
+  const _GateRaidSection({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = state;
+    final lv = s.level;
+    final gate = s.gateExercises;
+    final cleared = s.gateClearedThisWeek;
+
+    if (cleared) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [
+            AppColors.gold.withValues(alpha: 0.16),
+            AppColors.bg2,
+          ]),
+          borderRadius: BorderRadius.circular(2),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.verified_rounded, color: AppColors.gold, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('GATE CLEARED · THIS WEEK',
+                  style: monoStyle(
+                      size: 12, color: AppColors.gold, spacing: 2)),
+            ),
+          ],
+        ),
+      );
     }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: lv.color.withValues(alpha: 0.12),
+                border: Border.all(color: lv.color, width: 1.5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+              child: Text(lv.rank,
+                  style: TextStyle(
+                      fontFamily: kMono,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: lv.color)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('◈ GATE RAID ◈',
+                      style: monoStyle(
+                          size: 11, color: AppColors.gold, spacing: 3)),
+                  Text('${lv.rank}-RANK GATE',
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textBright)),
+                ],
+              ),
+            ),
+            Text('${s.gateCheckedCount} / ${gate.length}',
+                style: monoStyle(size: 11, color: AppColors.gold)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Optional extra. Skip freely — daily quest still protects your streak.',
+          style: monoStyle(size: 11, spacing: 0.3),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.bg2,
+            borderRadius: BorderRadius.circular(2),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.28)),
+          ),
+          child: Column(
+            children: [
+              for (final e in gate)
+                QuestTile(
+                  exercise: e,
+                  checked: s.isChecked(e.id),
+                  locked: !s.completedToday || s.profile.pendingPenalty,
+                  onToggle: () => s.toggleGateCheck(e.id),
+                  onStartTimer: e.kind == ExerciseKind.time
+                      ? () => _startExerciseTimer(context, s, e)
+                      : null,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        GateClearButton(
+          cleared: false,
+          enabled: s.canClearGate,
+          onPressed: () => _clearGate(context, s),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _clearGate(BuildContext context, AppState s) async {
+    final ok = await s.clearGate();
+    if (!ok || !context.mounted) return;
+    await showGateClearedOverlay(
+      context,
+      levelIndex: s.levelIndex,
+      gatesCleared: s.gatesClearedCount,
+    );
   }
 }
 

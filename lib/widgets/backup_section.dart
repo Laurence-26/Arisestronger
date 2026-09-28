@@ -10,7 +10,6 @@ import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../services/session.dart';
 import '../theme.dart';
-import '../widgets/system_button.dart';
 
 /// Export / import controls for the Profile tab. Everything stays on device.
 class BackupSection extends StatefulWidget {
@@ -128,25 +127,46 @@ class _BackupSectionState extends State<BackupSection> {
           padding: const EdgeInsets.only(bottom: 8, left: 4),
           child: Text('BACKUP', style: monoStyle(size: 10, spacing: 3)),
         ),
-        Text(
-          'Your progress lives only on this phone. Export a JSON file to keep a copy.',
-          style: monoStyle(size: 11, spacing: 0.3),
+        _tile(
+          icon: Icons.file_upload_outlined,
+          title: 'Export backup',
+          subtitle: 'Save every Hunter on this device to a JSON file',
+          onTap: _busy ? null : _export,
         ),
-        const SizedBox(height: 12),
-        SystemButton(
-          label: 'EXPORT BACKUP',
-          ghost: true,
-          busy: _busy,
-          onPressed: _export,
+        _tile(
+          icon: Icons.file_download_outlined,
+          title: 'Import backup',
+          subtitle: 'Restore from a previously exported file',
+          onTap: _busy ? null : _import,
         ),
-        const SizedBox(height: 8),
-        SystemButton(
-          label: 'IMPORT BACKUP',
-          ghost: true,
-          busy: _busy,
-          onPressed: _import,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
+          child: Text(
+            'Nothing is stored in a cloud. Export a backup before changing phones or uninstalling — otherwise your progress is gone.',
+            style: monoStyle(size: 11, spacing: 0.3),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _tile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: panelDecoration(),
+      child: ListTile(
+        onTap: onTap,
+        leading: Icon(icon, color: AppColors.purple),
+        title: Text(title,
+            style: const TextStyle(
+                color: AppColors.textBright, fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: monoStyle(size: 11)),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/gate_programs.dart';
 import '../services/notification_service.dart';
 import '../services/session.dart';
 import '../state/app_state.dart';
@@ -61,7 +62,7 @@ class ProfileTab extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textBright)),
                         Text(s.level.name, style: monoStyle(size: 11, spacing: 1)),
-                        Text('Stored only on this device',
+                        Text('LOCAL PROFILE · OFFLINE',
                             style: monoStyle(size: 10, spacing: 0.5)),
                       ],
                     ),
@@ -86,6 +87,14 @@ class ProfileTab extends StatelessWidget {
               },
             ),
             _tile(
+              icon: Icons.shield_moon_outlined,
+              title: 'Gate day',
+              subtitle:
+                  '${weekdayLabel(s.profile.gateWeekday)} · optional weekly raid',
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textDim),
+              onTap: () => _pickGateDay(context, s),
+            ),
+            _tile(
               icon: Icons.notifications_active_outlined,
               title: 'Enable / test notifications',
               subtitle: 'Grant permission and send a test',
@@ -95,6 +104,8 @@ class ProfileTab extends StatelessWidget {
                 await NotificationService.instance.scheduleDailyReminders(
                   hour: s.profile.reminderHour,
                   minute: s.profile.reminderMinute,
+                  questCompletedToday: s.completedToday,
+                  isGateDay: s.isGateDay && !s.gateClearedThisWeek,
                 );
                 if (granted) {
                   await NotificationService.instance.showNow(
@@ -125,13 +136,59 @@ class ProfileTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Center(
-              child: Text('ARISESTRONGER · v1.1.2',
+              child: Text('ARISESTRONGER · v1.1.5',
                   style: monoStyle(size: 10, spacing: 2)),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickGateDay(BuildContext context, AppState s) async {
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.bg2,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('◈ GATE DAY ◈',
+                    textAlign: TextAlign.center,
+                    style: monoStyle(
+                        size: 12, color: AppColors.gold, spacing: 3)),
+                const SizedBox(height: 8),
+                Text(
+                  'Pick the weekday your optional Gate Raid appears. Skipping it never penalizes you.',
+                  textAlign: TextAlign.center,
+                  style: monoStyle(size: 11, spacing: 0.3),
+                ),
+                const SizedBox(height: 14),
+                for (var day = 1; day <= 7; day++)
+                  ListTile(
+                    onTap: () => Navigator.pop(ctx, day),
+                    title: Text(weekdayLabel(day),
+                        style: TextStyle(
+                          color: day == s.profile.gateWeekday
+                              ? AppColors.gold
+                              : AppColors.textBright,
+                          fontWeight: FontWeight.w600,
+                        )),
+                    trailing: day == s.profile.gateWeekday
+                        ? const Icon(Icons.check_circle, color: AppColors.gold)
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (picked != null) await s.setGateWeekday(picked);
   }
 
   Widget _sectionTitle(String t) => Padding(

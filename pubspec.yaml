@@ -2,7 +2,7 @@ name: daily_quest
 description: "AriseStronger — a Solo Leveling inspired daily fitness quest system."
 publish_to: 'none'
 
-version: 1.1.2+6
+version: 1.1.5+9
 
 environment:
   sdk: ^3.10.0
@@ -42,6 +42,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
 
   flutter_lints: ^6.0.0
   sqflite_common_ffi: ^2.3.4
@@ -66,6 +68,11 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/icon/icon.png
+    - assets/icon/icon_foreground.png
+    - assets/icon/splash.png
 
   fonts:
     - family: Rajdhani

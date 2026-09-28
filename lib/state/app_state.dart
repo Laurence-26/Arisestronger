@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/gate_programs.dart';
 import '../data/quotes.dart';
 import '../data/rank_programs.dart';
 import '../models/exercise.dart';
 import '../models/level.dart';
 import '../models/profile.dart';
+import '../services/local_database.dart';
 import '../services/notification_service.dart';
 import '../services/quest_service.dart';
 
@@ -31,6 +33,9 @@ class AppState extends ChangeNotifier {
   final QuestService _svc;
   AppState(this._svc);
 
+  /// Widget tests skip plugin channels (notifications) that hang under flutter_test.
+  static bool skipSideEffects = false;
+
   bool loading = true;
   String? error;
 
@@ -43,9 +48,13 @@ class AppState extends ChangeNotifier {
   Map<String, bool> _checks = {};
   Set<String> _history = {};
   Set<String> _penalties = {};
+  Set<String> _gateClearDays = {};
   bool _completedToday = false;
+  bool _gateClearedThisWeek = false;
+  int _gatesClearedCount = 0;
 
   String get todayKey => _dayKey(_todayDate());
+  String get weekKey => isoWeekKey(_todayDate());
 
   // ---------------- DERIVED ----------------
   Level get level => kLevels[levelIndexOf(profile.totalDays)];
@@ -99,6 +108,34 @@ class AppState extends ChangeNotifier {
 
   Set<String> get history => _history;
   Set<String> get penalties => _penalties;
+  Set<String> get gateClearDays => _gateClearDays;
+  int get gatesClearedCount => _gatesClearedCount;
+
+  /// Gate is visible only on the preferred weekday, with no pending penalty.
+  bool get isGateDay =>
+      !profile.pendingPenalty &&
+      _todayDate().weekday == profile.gateWeekday;
+
+  bool get gateClearedThisWeek => _gateClearedThisWeek;
+
+  List<Exercise> get gateExercises =>
+      gateExercisesFor(levelIndex, onDate: _todayDate());
+
+  bool get allGateChecked {
+    final list = gateExercises;
+    if (list.isEmpty) return false;
+    return list.every((e) => _checks[e.id] == true);
+  }
+
+  int get gateCheckedCount =>
+      gateExercises.where((e) => _checks[e.id] == true).length;
+
+  bool get canClearGate =>
+      isGateDay &&
+      !_gateClearedThisWeek &&
+      _completedToday &&
+      allGateChecked &&
+      !profile.pendingPenalty;
 
   // ---------------- LOAD ----------------
   Future<void> load() async {
@@ -112,12 +149,17 @@ class AppState extends ChangeNotifier {
       _completedToday = await _svc.isDayCompleted(todayKey);
       _history = await _svc.fetchHistory();
       _penalties = await _svc.fetchPenalties();
+      _gateClearDays = await _svc.fetchGateClearDays();
+      _gateClearedThisWeek = await _svc.isGateClearedForWeek(weekKey);
+      _gatesClearedCount = await _svc.countGateClears();
 
       await _runMissedCheck();
-      try {
-        await _scheduleReminders();
-      } catch (e) {
-        debugPrint('Reminder schedule failed: $e');
+      if (!skipSideEffects) {
+        try {
+          await _scheduleReminders();
+        } catch (e) {
+          debugPrint('Reminder schedule failed: $e');
+        }
       }
     } catch (e) {
       error = e.toString();
@@ -131,6 +173,8 @@ class AppState extends ChangeNotifier {
     await NotificationService.instance.scheduleDailyReminders(
       hour: profile.reminderHour,
       minute: profile.reminderMinute,
+      questCompletedToday: _completedToday,
+      isGateDay: isGateDay && !_gateClearedThisWeek,
     );
   }
 
@@ -177,10 +221,43 @@ class AppState extends ChangeNotifier {
 
   // ---------------- CHECKS ----------------
   Future<void> toggleCheck(String exerciseId) async {
-    if (profile.pendingPenalty || _completedToday) return;
+    if (profile.pendingPenalty) return;
+    // Daily quest checks lock after complete; Gate checks stay editable until Gate clear.
+    final isGate = exerciseId.startsWith('gate_');
+    if (!isGate && _completedToday) return;
+    if (isGate && (_gateClearedThisWeek || !_completedToday)) return;
     _checks[exerciseId] = !(_checks[exerciseId] ?? false);
     notifyListeners();
-    await _svc.saveChecks(todayKey, _checks);
+    await _svc.saveChecks(todayKey, _checks, completed: _completedToday);
+  }
+
+  Future<void> toggleGateCheck(String exerciseId) => toggleCheck(exerciseId);
+
+  /// Persist a Gate clear for this ISO week. Does not change totalDays/streak.
+  Future<bool> clearGate() async {
+    if (!canClearGate) return false;
+    await _svc.addGateClear(
+      week: weekKey,
+      day: todayKey,
+      rankIndex: levelIndex,
+    );
+    _gateClearedThisWeek = true;
+    _gatesClearedCount += 1;
+    _gateClearDays.add(todayKey);
+    // Mark every Gate exercise checked in today's state.
+    for (final e in gateExercises) {
+      _checks[e.id] = true;
+    }
+    await _svc.saveChecks(todayKey, _checks, completed: _completedToday);
+    notifyListeners();
+    if (!skipSideEffects) {
+      try {
+        await _scheduleReminders();
+      } catch (e) {
+        debugPrint('Reminder schedule failed: $e');
+      }
+    }
+    return true;
   }
 
   // ---------------- COMPLETE DAY ----------------
@@ -213,7 +290,13 @@ class AppState extends ChangeNotifier {
     await _svc.saveChecks(todayKey, _checks, completed: true);
     await _svc.addHistory(todayKey);
     await _svc.saveProfile(profile);
-    await _scheduleReminders();
+    if (!skipSideEffects) {
+      try {
+        await _scheduleReminders();
+      } catch (e) {
+        debugPrint('Reminder schedule failed: $e');
+      }
+    }
 
     return CompleteResult(newLevel > prevLevel, newLevel);
   }
@@ -314,7 +397,13 @@ class AppState extends ChangeNotifier {
     );
     notifyListeners();
     await _svc.saveProfile(profile);
-    await _scheduleReminders();
+    if (!skipSideEffects) {
+      try {
+        await _scheduleReminders();
+      } catch (e) {
+        debugPrint('Reminder schedule failed: $e');
+      }
+    }
   }
 
   // ---------------- SETTINGS ----------------
@@ -322,7 +411,26 @@ class AppState extends ChangeNotifier {
     profile = profile.copyWith(reminderHour: hour, reminderMinute: minute);
     notifyListeners();
     await _svc.saveProfile(profile);
-    await _scheduleReminders();
+    if (!skipSideEffects) {
+      try {
+        await _scheduleReminders();
+      } catch (e) {
+        debugPrint('Reminder schedule failed: $e');
+      }
+    }
+  }
+
+  Future<void> setGateWeekday(int weekday) async {
+    profile = profile.copyWith(gateWeekday: weekday.clamp(1, 7));
+    notifyListeners();
+    await _svc.saveProfile(profile);
+    if (!skipSideEffects) {
+      try {
+        await _scheduleReminders();
+      } catch (e) {
+        debugPrint('Reminder schedule failed: $e');
+      }
+    }
   }
 
   // ---------------- NEW DAY ----------------
@@ -330,6 +438,9 @@ class AppState extends ChangeNotifier {
   Future<void> refreshForNewDay() async {
     _checks = await _svc.fetchChecks(todayKey);
     _completedToday = await _svc.isDayCompleted(todayKey);
+    _gateClearedThisWeek = await _svc.isGateClearedForWeek(weekKey);
+    _gateClearDays = await _svc.fetchGateClearDays();
+    _gatesClearedCount = await _svc.countGateClears();
     await _runMissedCheck();
     notifyListeners();
   }
