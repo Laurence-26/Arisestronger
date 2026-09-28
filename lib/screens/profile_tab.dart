@@ -136,7 +136,7 @@ class ProfileTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Center(
-              child: Text('ARISESTRONGER · v1.1.4',
+              child: Text('ARISESTRONGER · v1.1.5',
                   style: monoStyle(size: 10, spacing: 2)),
             ),
           ],
